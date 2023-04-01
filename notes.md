@@ -148,6 +148,78 @@ of specificity.
 Generic note: using module name as parameter and then dot notation to call functions from that
 module -- another light bulb moment for me.
 
+# Ch 4
+
+Defining objective is critical step. Search objective is path, optimization max or min value
+
+Constraint problems -- TIL the term for that type of problem on leetcode, really the entire
+motivation for buying this book was solving the Einstein's house problem on Exercism
+
+Thought creating a module attribute with a map or ETS table for looking up profits and weights
+would be the obvious solution, but I like the use of `zip` in the fitness function.
+
+> `zip -> map -> sum` can be rewritten as `zip_reduce`
+
+If all cargo can fit the problem is trivial, so using the total available profit for ALL cargo
+as a termination criteria seems odd ... which was apparently the author's point LOL.
+
+## Penalty Functions
+
+I'd like to see the penalty function defined as a private function independent of the fitness
+function, even if it's only ever called by the fitness function.
+
+## Termination Criteria
+
+> The goal is to produce the best solution possible, even when you don't know that it's the absolute best.
+
+This concept throws me off. I'm used to this concept of FP that states any function passed a
+given input always returns the same output. It seems that you could give a genetic algo some
+input and end up with slightly different output.
+
+Possible errors in OneMax example for average fitness threshold. Since population is a list of
+Chromosome structs, you need to first map the population to an enumerable of just genes before
+calculating average fitness.
+
+```
+avg = population |> Enum.map(&Map.get(&1, :genes)) |> Enum.map(&(Enum.sum(&1) / length(&1)))
+```
+
+Also all three termination criteria converge on 42 and never terminate b/c the fitness function
+is just the sum and the Genetic module sorts by `>=` after applying the fitness function. To
+achieve convergence to minimum the fitness function needs to be changed to
+`Enum.sum(choromosome.genes) * -1`. The average is trickier. Perhaps `Genetic.evaluate/3` should
+be passed a sorter function in addition to the fitness function. This could be included in `opts`
+keyword list.
+
+Stopping after `n` generations is also more **fuzzy** than I typically think about finding
+solutions.
+
+Tracking time since last improvement -- light bulb moment
+
+Temperature -> rate of improvement toward optimal solution
+
+The new `Genetic.evolve/6` function header omits the `population` paramter. Also, the line
+`best = Enum.max_by(population, &problem.fitness_function/1)` seemingly eliminates the need for
+the `Genetic.evaluate/3` function. Previously the population was evaluated (i.e., sorted) with
+`evaluate` and then `best = hd(population)` which should be the same output as the `max_by`.
+
+Schema and theorems and heuristics, oh my! Getting into the fancy words now. :)
+
+Heuristic -- estimate based on limited information, does not need to be (and cannot be) perfectly accurate for all situations (input?) but needs to capture essential characteristics of the problemto be solved.
+
+Multiple factor optimization -- attempt to simplify to single objective
+* weighted sum of multiple factors is one such method
+    * should weights be in `opts` to generalize lib? maybe require something like `fitness_factors` as well with guards to catch that all values in `opts.fitness_factors` are available in `chromosome`
+
+Perceptual data -- ranking cannot be calculated mathematically but ranking by user can transform into mathematical fitness via interactive fitness functions that require user input
+
+### Errata:
+> fit = IO.get("Rate from 1 to 10 ")
+
+needs to be
+
+> fit = IO.gets("Rate from 1 to 10 ") |> String.trim()
+
 ## Footnotes
 
 [^1]: This is the point my background gets in the way of the metaphor.

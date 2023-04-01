@@ -60,22 +60,24 @@ defmodule Genetic do
     population = initialize(&problem.genotype/0, opts)
 
     population
-    |> evolve(problem, opts)
+    |> evolve(problem, 0, 0, 0, opts)
   end
 
-  def evolve(population, problem, opts \\ []) do
+  def evolve(population, problem, generation, last_max_fitness, temp, opts \\ []) do
     population = evaluate(population, &problem.fitness_fun/1, opts)
-    best = hd(population)
+    best = Enum.max_by(population, &problem.fitness_fun/1)
+    best_fitness = best.fitness
+    temp = 0.8 * (temp + (best_fitness - last_max_fitness))
     IO.write("\rCurrent Best:#{best.fitness}")
 
-    if problem.terminate?(population) do
+    if problem.terminate?(population, generation, temp) do
       best
     else
       population
       |> select(opts)
       |> crossover(opts)
       |> mutation(opts)
-      |> evolve(problem, opts)
+      |> evolve(problem, generation + 1, best_fitness, temp, opts)
     end
   end
 end
