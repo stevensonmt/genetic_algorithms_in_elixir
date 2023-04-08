@@ -9,7 +9,9 @@ defmodule Genetic do
 
   def initialize(genotype, opts \\ []) do
     pop_size = Keyword.get(opts, :population_size, @default_pop_size)
-    for _ <- 1..pop_size, do: genotype.()
+
+    Stream.repeatedly(fn -> genotype.() end)
+    |> Enum.take(pop_size)
   end
 
   def evaluate(population, fitness_function, _opts \\ []) do
@@ -22,10 +24,29 @@ defmodule Genetic do
     |> Enum.sort_by(fitness_function, &>=/2)
   end
 
-  def select(population, _opts \\ []) do
-    population
-    |> Enum.chunk_every(2)
-    |> Enum.map(&List.to_tuple/1)
+  def select(population, opts \\ []) do
+    select_fn = Keyword.get(opts, :selection_type, &Toolbox.Selection.elite/1)
+    selection_rate = Keyword.get(opts, :selection_rate, 0.8)
+
+    n =
+      case round(length(population) * selection_rate) do
+        x when rem(x, 2) == 0 -> x
+        x -> x + 1
+      end
+
+    parents = select_fn |> apply([population, n])
+
+    leftover =
+      population
+      |> MapSet.new()
+      |> MapSet.difference(MapSet.new(parents))
+
+    parents =
+      parents
+      |> Enum.chunk_every(2)
+      |> Enum.map(&List.to_tuple/1)
+
+    {parents, MapSet.to_list(leftover)}
   end
 
   def crossover(population, _opts \\ []) do
@@ -65,19 +86,29 @@ defmodule Genetic do
 
   def evolve(population, problem, generation, last_max_fitness, temp, opts \\ []) do
     population = evaluate(population, &problem.fitness_fun/1, opts)
-    best = Enum.max_by(population, &problem.fitness_fun/1)
+    best = hd(population)
     best_fitness = best.fitness
-    temp = 0.8 * (temp + (best_fitness - last_max_fitness))
-    IO.write("\rCurrent Best:#{best.fitness}")
+    temp = 0.9 * (temp + (best_fitness - last_max_fitness))
+    IO.write("\rCurrent Best:#{best.fitness} at generation: #{generation}")
 
-    if problem.terminate?(population, generation, temp) do
-      best
-    else
-      population
-      |> select(opts)
-      |> crossover(opts)
-      |> mutation(opts)
-      |> evolve(problem, generation + 1, best_fitness, temp, opts)
+    case problem.terminate?(population, generation, temp) do
+      true ->
+        best
+
+      :no_but_reset ->
+        IO.puts("\nrestarting!\n")
+
+        initialize(&problem.genotype/0, opts)
+        |> evaluate(&problem.fitness_fun/1, opts)
+        |> evolve(problem, generation + 1, last_max_fitness, 3, opts)
+
+      _ ->
+        {parents, leftover} = select(population, opts)
+        children = crossover(parents, opts)
+
+        (children ++ leftover)
+        |> mutation(opts)
+        |> evolve(problem, generation + 1, best_fitness, temp, opts)
     end
   end
 end

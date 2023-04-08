@@ -220,6 +220,126 @@ needs to be
 
 > fit = IO.gets("Rate from 1 to 10 ") |> String.trim()
 
+# Ch 5
+
+Introductory discussion of selection, diversity, etc fairly intuitive for anyone with a biology background.
+
+## Selection is biased sampling (is it?)
+
+* Selection rate might be an important factor for the Sudoku problem ...
+
+> Not sure I agree that selection and statistical sampling are variations on the same theme.
+Statistical sampling is an attempt to define or describe a population based on a limited number
+of individuals. Selection is about applying a definition or description to individuals to create
+the population you want.
+
+* High selection rates should slow convergence but improve diversity (I think)
+
+## Importance of Selection Pressure
+
+* Selection pressure of 1 is fully random? I would have thought selection pressure of 1 was fully elite while a pressure of 0 was fully randm.
+
+> One extreme, when there is no selection pressure, is completely stochastic so that the search acts just like the Monte Carlo method [8], randomly sampling the space of feasible solutions.
+- https://ecs.wgtn.ac.nz/foswiki/pub/Main/TechnicalReportSeries/ECSTR09-10.pdf
+
+* Higher selection pressure leads to faster convergence
+
+## Types of Selection
+
+I don't understand how rewards based selection differs from fitness based selection. Feels like you're just shifting the fitness function to some mapping or reducing function that accumulates rewards and then determining fitness based on those rewards. I guess it doesn't matter that I don't understand the difference since the author says the book will only use fitness based selection strategies.
+
+## Creating a Selection Toolbox
+
+CODE!
+Nice way to implement multiple strategies for the library. I think I still struggle with when to implement behaviours versus hard coding for things like this. Ideally I think `Toolbox` module would define some sort of behaviour for implementing strategies. So maybe there's a `selection` callback but also a `mutation` and `crossover` callback. Then you implement some defaults with like `Toolbox.Selection` module but users of the lib can extend with their own versions without having to touch the lib code. Thoughts?
+
+## Adjusting the Selection Rate
+
+```
+n = round(length(population) * select_rate)
+n = if rem(n, 2) == 0, do: n, else: n + 1
+```
+looks weird to me. I don't like the immediate rebinding. I'd rewrite as something like:
+```
+n =
+  case round(length(population) * select_rate) do
+    x when rem(x, 2) == 0 -> x
+    x -> x + 1
+  end
+```
+
+In getting the diff between population and parents, is using `MapSet` intermediate structure more efficient than just `Enum.filter`? I would guess only noticeably so for very large population/parent sizes.
+
+## Implementing Common Selection Strategies
+
+### Elitism
+
+* Simplest, most common strategy
+* Ignores diversity so tends to converge quickly
+
+The implementation here assumes the input was sorted. Because this is not a private function, I don't think there's any guarantee that the input would be sorted and therefore no guarantee that the output is actually elite. Is there any way to enforce that the population would be sorted before calling `elite/2`?
+
+### Random
+
+* Maximizes diversity but ignores fitness
+* Rarely useful except when **novelty** is a valuable quality in a solution
+    * generating Sudoku or other puzzle starting scenarios
+    * Even in this scenario, one could track 'seen' solutions and use this in elite selection as fitness criteria
+    * If not tracking previously seen solutions, how does one determine novelty across generations?
+
+### Tournament
+
+1. Choose random `k` chromosomes to compete
+2. Apply fitness evaluation to pool
+3. Repeat `n` times to get `n` parents for next gen
+
+* For `k = 1` equal to random selection
+* For `k = length(population)` equal to elitism selection
+* I'm not sure the above is entirely true b/c with random and elite you don't have the potential for selecting duplicates. Even with `k = length(population)` you can end up with multiple instances of a single chromosome in the parent pool, leading to less diversity than with straight `elite/2` strategy. Same issue with `k = 1` vs straight `random/2` strategy.
+* The more complicated implementation to avoid duplicates resolves the above.
+
+More stylistic bike-shedding. Rather than
+```
+0..(n-1)
+|> Enum.map(
+    fn _ ->
+      population
+      |> Enum.take_random(tournsize)
+      |> Enum.max_by(&(&1.fitness))
+   end
+  )
+```
+I prefer
+```
+Stream.repeatedly(
+    fn ->
+      population
+      |> Enum.take_random(tournsize)
+      |> Enum.max_by(&(&1.fitness))
+    end
+  )
+|> Enum.take(n)
+```
+
+### Roulette
+
+Fitness-proportionate selection == weighted random?
+Similar to tournament it balances fitness and diversity
+* Feels like both would make it easy to have multiple selection pressures simulataneously with different degrees of influence. Any fitness function could do this, I suppose, but I could see one element used for increasing odds of selection for tournament and another element used for determining fitness overall. Not sure that makes sense.
+
+> Roulette selection is by far the slowest and most difficult algorithm to implement
+
+Why would that be the case? Seems like it would have been a way to speed up convergence in tournament by weighting competitors towards more fit individuals.
+
+Regarding implementation I again prefer the `Stream.repeatedly(...) |> Enum.take(n)` pattern.
+I also don't like the implementation for the "roulette wheel spin" because I believe it will be influenced by the order in which chromosomes are placed in the list. I think a more precise way of doing "weighted random" selection would be something like
+```
+population
+|> Enum.reduce([], fn chromosome, weighted_population -> Enum.reduce(1..chromosome.fitness, weighted_population, fn _ -> [chromosome | weighted_population] end) end)
+|> Enum.random()
+```
+I do recognize this is not an efficient implementation but it avoids unintentionally favoring items at the beginning of the list. If your population is an indexed store (:array, or %{ ndx => chromosome}) you could do the same but just with indexes represented in the accumulator, select the random index, and then take that chromosome from the population. This could save some space but is still not time-efficient.
+
 ## Footnotes
 
 [^1]: This is the point my background gets in the way of the metaphor.
