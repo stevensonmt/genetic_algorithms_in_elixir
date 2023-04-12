@@ -25,7 +25,7 @@ defmodule Genetic do
   end
 
   def select(population, opts \\ []) do
-    select_fn = Keyword.get(opts, :selection_type, &Toolbox.Selection.elite/1)
+    select_fn = Keyword.get(opts, :selection_type, &Toolbox.Selection.elite/2)
     selection_rate = Keyword.get(opts, :selection_rate, 0.8)
 
     n =
@@ -49,16 +49,14 @@ defmodule Genetic do
     {parents, MapSet.to_list(leftover)}
   end
 
-  def crossover(population, _opts \\ []) do
+  def crossover(population, opts \\ []) do
+    crossover_fn = Keyword.get(opts, :crossover_type, &Toolbox.Crossover.order_one_crossover/2)
+
     population
     |> Enum.reduce(
       [],
       fn {p1, p2}, acc ->
-        # passing length of chromosome to :rand.uniform/1 prevents overflow 
-        # and allows any size chromosome to be used
-        cx_point = :rand.uniform(length(p1.genes))
-        {{h1, t1}, {h2, t2}} = {Enum.split(p1.genes, cx_point), Enum.split(p2.genes, cx_point)}
-        {c1, c2} = {%Chromosome{p1 | genes: h1 ++ t2}, %Chromosome{p2 | genes: h2 ++ t1}}
+        {c1, c2} = apply(crossover_fn, [p1, p2])
         [c1, c2 | acc]
       end
     )

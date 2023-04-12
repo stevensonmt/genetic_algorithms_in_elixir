@@ -340,6 +340,22 @@ population
 ```
 I do recognize this is not an efficient implementation but it avoids unintentionally favoring items at the beginning of the list. If your population is an indexed store (:array, or %{ ndx => chromosome}) you could do the same but just with indexes represented in the accumulator, select the random index, and then take that chromosome from the population. This could save some space but is still not time-efficient.
 
+
+# Ch 6
+
+* Exploitation - using currently available information
+    * Crossover is mechanism of exploitation in genetic algos
+    * combining schemas to find better solutions
+
+* Exploration - finding new information
+
+Errata:
+`defmodule NQueens` missing `do`
+
+Is Enum.uniq necessary since no duplicates are possible when the chromosome is defined by shuffling 0..7?
+I don't get any stagnation with the example.
+Author states that order one crossover is slow by virtue of what it does. The given implementation seems particularly inefficient though.
+
 ## Footnotes
 
 [^1]: This is the point my background gets in the way of the metaphor.
