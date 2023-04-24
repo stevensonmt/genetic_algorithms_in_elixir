@@ -352,9 +352,33 @@ I do recognize this is not an efficient implementation but it avoids unintention
 Errata:
 `defmodule NQueens` missing `do`
 
-Is Enum.uniq necessary since no duplicates are possible when the chromosome is defined by shuffling 0..7?
+In the fitness function, is `Enum.uniq` necessary since no duplicates are possible when the chromosome is defined by shuffling `0..7`?
 I don't get any stagnation with the example.
 Author states that order one crossover is slow by virtue of what it does. The given implementation seems particularly inefficient though.
+
+Don't use uniform crossover when chromosome represents a permutation -- it will generate invalid combinations?
+
+Whole arithmetic crossover won't work for binary representations, only for real world values. Produces a weighted average at each gene with children being complementary. Can easily converge on poor solution. Iterates over whole chromosomes, so may be slower on larger solutions.
+
+> Any reason we can't consider multiple parents to prevent convergence? Three contributors instead of two?
+
+TODO: Messy single-point, Cycle, Multipoint crossover
+
+Multiparent crossover implementation seems to only generate one child per parent pair, but why not two chidren as with simple two-parent single point crossover?
+
+Mutiplarent crossover not recommended due to complexity it introduces, but why is this more complex than other methods for preventing premature convergence?
+
+## Errata
+`repair_chromosome/1` should be
+```elixir
+def repair_chromosome(chromosome) do
+  genes = MapSet.new(chromosome.genes)
+  new_genes = repair_helper(genes, 8) # book has chromosome instead of genes here
+  %Chromosome{chromosome | genes: new_genes}
+end
+```
+
+Why is `k` hard coded as 8?
 
 ## Footnotes
 
