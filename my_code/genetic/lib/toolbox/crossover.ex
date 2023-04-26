@@ -90,10 +90,16 @@ defmodule Toolbox.Crossover do
 
   def multipoint(p1, p2, k) do
     cxs =
-      Stream.cycle(:rand.uniform(length(p1.genes) - 1))
+      Stream.repeatedly(fn -> :rand.uniform(length(p1.genes) - 1) end)
       |> Enum.take(k)
 
-    cxs = [0 | cxs]
-    # slices will be cxs chunked every 2
+    cxs
+    |> Enum.reduce({p1.genes, p2.genes}, fn cx, {c1, c2} ->
+      [{h1, t1}, {h2, t2}] = Enum.map([c1, c2], &Enum.split(&1, cx))
+      {h1 ++ t2, h2 ++ t1}
+    end)
+    |> Tuple.to_list()
+    |> Enum.map(fn genes -> %Chromosome{genes: genes, size: length(genes)} end)
+    |> List.to_tuple()
   end
 end
