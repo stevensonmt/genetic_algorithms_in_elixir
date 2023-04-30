@@ -102,4 +102,44 @@ defmodule Toolbox.Crossover do
     |> Enum.map(fn genes -> %Chromosome{genes: genes, size: length(genes)} end)
     |> List.to_tuple()
   end
+
+  def cycle(p1, p2) do
+    [arr1, arr2] =
+      [p1.genes, p2.genes]
+      |> Enum.map(fn list ->
+        list |> Enum.with_index() |> Map.new(fn {v, k} -> {k, v} end)
+      end)
+
+    cycle_helper(arr1, arr2, 0, %{}, %{})
+  end
+
+  defp cycle_helper(arr1, arr2, ndx, c1, c2) do
+    if arr1[ndx] in Map.values(c1) do
+      cycle_completed(arr1, arr2, c1, c2)
+    else
+      v1 = Map.get(arr1, ndx)
+      v2 = Map.get(arr2, ndx)
+      c1 = Map.put(c1, ndx, v1)
+      c2 = Map.put(c2, ndx, v2)
+      ndx = find_index(v1, arr2)
+      cycle_helper(arr1, arr2, ndx, c1, c2)
+    end
+  end
+
+  defp cycle_completed(arr1, arr2, c1, c2) do
+    [{arr2, c1}, {arr1, c2}]
+    |> Enum.map(fn {p, c} ->
+      p
+      |> Enum.reduce(c, fn {k, v}, acc ->
+        Map.put_new(acc, k, v)
+      end)
+    end)
+    |> Enum.map(fn map -> map |> Enum.sort_by(fn {k, _v} -> k end) |> Enum.map(&elem(&1, 1)) end)
+    |> Enum.map(fn genes -> %Chromosome{genes: genes, size: length(genes)} end)
+    |> List.to_tuple()
+  end
+
+  defp find_index(val, arr) do
+    arr |> Enum.find(fn {_k, v} -> v == val end) |> elem(0)
+  end
 end
