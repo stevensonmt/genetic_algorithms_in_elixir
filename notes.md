@@ -382,6 +382,14 @@ Why is `k` hard coded as 8?
 
 In implementing cycle crossover it does not seem that gene data structure needs to be an ordered list in the sense of "sorted list" but rather a list in which order of elements is relevant. Indexable structures like arrays or maps of %{index => value} could be used as well.
 
+
+# Chapter 7 Preventing Premature Convergence
+
+First, let me say I am too immature for this thread title.
+
+* `Integer.undigits/2` is much nicer than the provided key generation implementation
+* Errata: fitness fun target is a charlist but passed to String.jaro_distance, therefore needs to be a string.
+
 ## Footnotes
 
 [^1]: This is the point my background gets in the way of the metaphor.

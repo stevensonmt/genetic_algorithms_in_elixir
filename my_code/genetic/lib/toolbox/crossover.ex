@@ -117,8 +117,7 @@ defmodule Toolbox.Crossover do
     if arr1[ndx] in Map.values(c1) do
       cycle_completed(arr1, arr2, c1, c2)
     else
-      v1 = Map.get(arr1, ndx)
-      v2 = Map.get(arr2, ndx)
+      [v1, v2] = [arr1, arr2] |> Enum.map(&Map.get(&1, ndx))
       c1 = Map.put(c1, ndx, v1)
       c2 = Map.put(c2, ndx, v2)
       ndx = find_index(v1, arr2)
