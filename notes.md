@@ -389,6 +389,40 @@ First, let me say I am too immature for this thread title.
 
 * `Integer.undigits/2` is much nicer than the provided key generation implementation
 * Errata: fitness fun target is a charlist but passed to String.jaro_distance, therefore needs to be a string.
+* Errata: scramble/2 implementation seems to treat `Enum.slice/3` as `Enum.slice(enum, start, stop)` when it is actually `Enum.slice(enum, start, size)`
+
+The provided scramble/2 seems inefficient due to the use of Enum.slice in 3 areas and concatenating 3 lists together which requires iterating over the genes multiple times. I came up with a way to circumvent that approach, which I think is more efficient:
+```elixir
+def scramble(chromosome, n) do
+  start = :rand.uniform(n - 1)
+  {lo, hi} =
+    if start + n >= chromosome.size do
+      {start - n, start}
+    else
+      {start, start + n}
+    end
+  swaps =
+    lo..hi
+    |> Enum.zip(Enum.shuffle(lo..hi))
+    |> Map.new()
+
+  arr = :array.from_list(chromosome.genes)
+  genes =
+    0..:array.sparse_size(arr)
+    |> Enum.reduce(arr, fn i, gs ->
+          cond do
+            i < lo -> gs
+            i > hi -> gs
+            true ->
+              new_val = :array.get(swaps[i], arr)
+              :array.set(i, new_val, gs)
+          end
+        end)
+    |> :array.to_list()
+
+  %Chromosome{genes: genes, size: chromosome.size}
+end
+```
 
 ## Footnotes
 

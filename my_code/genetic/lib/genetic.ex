@@ -50,7 +50,7 @@ defmodule Genetic do
   end
 
   def crossover(population, opts \\ []) do
-    crossover_fn = Keyword.get(opts, :crossover_type, &Toolbox.Crossover.order_one_crossover/2)
+    crossover_fn = Keyword.get(opts, :crossover_type, &Toolbox.Crossover.single_point/2)
 
     population
     |> Enum.reduce(
@@ -60,7 +60,8 @@ defmodule Genetic do
         [c1, c2 | acc]
       end
     )
-    |> Enum.map(&repair_chromosome(&1))
+
+    # |> Enum.map(&repair_chromosome(&1))
   end
 
   def repair_chromosome(chromosome) do
@@ -81,10 +82,12 @@ defmodule Genetic do
   def mutation(population, opts \\ []) do
     mut_rate = Keyword.get(opts, :mutation_rate, 0.05)
 
+    mut_fn = Keyword.get(opts, :mutation_type, &Toolbox.Mutation.flip/1)
+
     population
     |> Enum.map(fn chromosome ->
       if :rand.uniform() < mut_rate do
-        %Chromosome{chromosome | genes: Enum.shuffle(chromosome.genes)}
+        apply(mut_fn, [chromosome])
       else
         chromosome
       end
