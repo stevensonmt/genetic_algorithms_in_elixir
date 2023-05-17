@@ -34,7 +34,9 @@ defmodule Genetic do
         x -> x + 1
       end
 
-    parents = select_fn |> apply([population, n])
+    parents =
+      select_fn
+      |> apply([population, n])
 
     leftover =
       population
@@ -44,7 +46,7 @@ defmodule Genetic do
     parents =
       parents
       |> Enum.chunk_every(2)
-      |> Enum.map(&List.to_tuple/1)
+      |> Enum.map(&List.to_tuple(&1))
 
     {parents, MapSet.to_list(leftover)}
   end
@@ -84,14 +86,11 @@ defmodule Genetic do
 
     mut_fn = Keyword.get(opts, :mutation_type, &Toolbox.Mutation.flip/1)
 
+    n = floor(length(population) * mut_rate)
+
     population
-    |> Enum.map(fn chromosome ->
-      if :rand.uniform() < mut_rate do
-        apply(mut_fn, [chromosome])
-      else
-        chromosome
-      end
-    end)
+    |> Enum.take_random(n)
+    |> Enum.map(&apply(mut_fn, [&1]))
   end
 
   def run(problem, opts \\ []) do
@@ -106,7 +105,8 @@ defmodule Genetic do
     best = hd(population)
     best_fitness = best.fitness
     temp = 0.9 * (temp + (best_fitness - last_max_fitness))
-    IO.write("\rCurrent Best:#{best.fitness} at generation: #{generation}")
+    fit_str = best.fitness |> :erlang.float_to_binary(decimals: 4)
+    IO.write("\rCurrent Best:#{fit_str}\tGeneration: #{generation}")
 
     case problem.terminate?(population, generation, temp) do
       true ->
@@ -122,10 +122,18 @@ defmodule Genetic do
       _ ->
         {parents, leftover} = select(population, opts)
         children = crossover(parents, opts)
+        mutants = mutation(population, opts)
+        offspring = children ++ mutants
 
-        (children ++ leftover)
-        |> mutation(opts)
-        |> evolve(problem, generation + 1, best_fitness, temp, opts)
+        new_population =
+          reinsertion(Enum.flat_map(parents, &Tuple.to_list(&1)), offspring, leftover, opts)
+
+        evolve(new_population, problem, generation + 1, best_fitness, temp, opts)
     end
+  end
+
+  def reinsertion(parents, offspring, leftover, opts \\ []) do
+    strategy = Keyword.get(opts, :reinsertion_strategy, &Toolbox.Reinsertion.pure/3)
+    apply(strategy, [parents, offspring, leftover])
   end
 end

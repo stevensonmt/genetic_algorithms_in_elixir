@@ -424,6 +424,24 @@ def scramble(chromosome, n) do
 end
 ```
 
+# Chapter 8 Replacing and Transitioning
+
+* Why the "penalty" for schedules exceeding credit hours rather than strictly excluding them?
+
+Mu plus Lambda = child competes with parents for survival
+Mu comma Lambda = children compete with each, more children than needed are spawned
+
+Elitist reinsertion is most common b/c reasonably fast and preserves strengths of prior generation for next generation.
+Uniform reinsertion probably only useful in cases where low initial diversity leads to premature convergence or problem spaces in which diversity is more important than fitness.
+
+`selection_rate`, `mutation_rate`, and `survival_rate` need to add up to 1.0 if population size needs to stay constant
+if population allowed to grow or shrink by % of population each generation there will be exponential growth or decay unless mitigating solutions implemented.
+
+while not addressed in detail, the idea that multi-population genetic algorithms can be parallelized suggests that those algorithms fit Elixir better than single population algorithms
+
+
+
+
 ## Footnotes
 
 [^1]: This is the point my background gets in the way of the metaphor.
