@@ -10,8 +10,13 @@ defmodule Genetic do
   def initialize(genotype, opts \\ []) do
     pop_size = Keyword.get(opts, :population_size, @default_pop_size)
 
-    Stream.repeatedly(fn -> genotype.() end)
-    |> Enum.take(pop_size)
+    population =
+      Stream.repeatedly(fn -> genotype.() end)
+      |> Enum.take(pop_size)
+
+    Utilities.Genealogy.add_chromosomes(population)
+
+    population
   end
 
   def evaluate(population, fitness_function, _opts \\ []) do
@@ -59,6 +64,8 @@ defmodule Genetic do
       [],
       fn {p1, p2}, acc ->
         {c1, c2} = apply(crossover_fn, [p1, p2])
+        Utilities.Genealogy.add_chromosome(p1, p2, c1)
+        Utilities.Genealogy.add_chromosome(p1, p2, c2)
         [c1, c2 | acc]
       end
     )
@@ -90,7 +97,11 @@ defmodule Genetic do
 
     population
     |> Enum.take_random(n)
-    |> Enum.map(&apply(mut_fn, [&1]))
+    |> Enum.map(fn c ->
+      mutant = apply(mut_fn, [c])
+      Utilities.Genealogy.add_chromosome(c, mutant)
+      mutant
+    end)
   end
 
   def run(problem, opts \\ []) do
@@ -102,6 +113,7 @@ defmodule Genetic do
 
   def evolve(population, problem, generation, last_max_fitness, temp, opts \\ []) do
     population = evaluate(population, &problem.fitness_fun/1, opts)
+    statistics(population, generation, opts)
     best = hd(population)
     best_fitness = best.fitness
     temp = 0.9 * (temp + (best_fitness - last_max_fitness))
@@ -135,5 +147,21 @@ defmodule Genetic do
   def reinsertion(parents, offspring, leftover, opts \\ []) do
     strategy = Keyword.get(opts, :reinsertion_strategy, &Toolbox.Reinsertion.pure/3)
     apply(strategy, [parents, offspring, leftover])
+  end
+
+  def statistics(population, generation, opts \\ []) do
+    default_stats = [
+      min_fitness: &Enum.min_by(&1, fn c -> c.fitness end).fitness,
+      max_fitness: &Enum.max_by(&1, fn c -> c.fitness end).fitness,
+      mean_fitness: &Enum.sum(Enum.map(&1, fn c -> c.fitness end))
+    ]
+
+    stats = Keyword.get(opts, :statistics, default_stats)
+
+    stats_map =
+      stats
+      |> Enum.reduce(%{}, fn {key, func}, acc -> Map.put(acc, key, func.(population)) end)
+
+    Utilities.Statistics.insert(generation, stats_map)
   end
 end

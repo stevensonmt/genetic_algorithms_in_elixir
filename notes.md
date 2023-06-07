@@ -444,6 +444,10 @@ while not addressed in detail, the idea that multi-population genetic algorithms
 Fitness function should probably take `opts` keyword list so that environments or specific weights can be passed. Alternatively if population is held in genserver then implementation is a callback where a fitness/2 function calls back to the population server to set the environment and then calls the fitness/1 function and lets the population server handle the implementation per environment. I prefer the former.
 
 Why wrap ETS in GenServer?
+Default stats definition of mean fitness seems wrong
+
+Errata: opts should not have underscore in start_link def
+missing comma after Utilities.Statistics entry in children list of application file
 
 ## Footnotes
 
