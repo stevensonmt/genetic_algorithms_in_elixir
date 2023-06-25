@@ -34,7 +34,7 @@ defmodule Genetic do
     selection_rate = Keyword.get(opts, :selection_rate, 0.8)
 
     n =
-      case round(length(population) * selection_rate) do
+      case floor(length(population) * selection_rate) do
         x when rem(x, 2) == 0 -> x
         x -> x + 1
       end
@@ -117,7 +117,7 @@ defmodule Genetic do
     best = hd(population)
     best_fitness = best.fitness
     temp = 0.9 * (temp + (best_fitness - last_max_fitness))
-    fit_str = best.fitness |> :erlang.float_to_binary(decimals: 4)
+    fit_str = (1.0 * best.fitness) |> :erlang.float_to_binary(decimals: 4)
     IO.write("\rCurrent Best:#{fit_str}\tGeneration: #{generation}")
 
     case problem.terminate?(population, generation, temp) do

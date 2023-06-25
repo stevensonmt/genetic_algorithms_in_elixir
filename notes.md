@@ -449,6 +449,14 @@ Default stats definition of mean fitness seems wrong
 Errata: opts should not have underscore in start_link def
 missing comma after Utilities.Statistics entry in children list of application file
 
+# Chapter 10 Visualizing the Results
+
+Needed to increase initial population size to 20 to get any variation over time. Had to remember that selection_rate + mutation_rate == 1.
+
+Not sure it helps my understanding of genetic algorithms but the visualization is cool.
+
+Errata: typo for `:gnuplot` in deps as `:gnuplut`
+
 ## Footnotes
 
 [^1]: This is the point my background gets in the way of the metaphor.
