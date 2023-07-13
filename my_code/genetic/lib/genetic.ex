@@ -1,4 +1,6 @@
 defmodule Genetic do
+  @on_load :load_nif
+
   @moduledoc """
   Documentation for `Genetic`.
   """
@@ -7,9 +9,16 @@ defmodule Genetic do
 
   @default_pop_size 100
 
+  def load_nif do
+    :erlang.load_nif(~c"./genetic", 0)
+  end
+
+  def xor96, do: raise("NIF xor96/0 not implemented.")
+
   def initialize(genotype, opts \\ []) do
     pop_size = Keyword.get(opts, :population_size, @default_pop_size)
 
+    # Stream.repeatedly(fn -> Chromosome.start_link(genes: genotype.()) end)
     population =
       Stream.repeatedly(fn -> genotype.() end)
       |> Enum.take(pop_size)
@@ -22,10 +31,13 @@ defmodule Genetic do
   def evaluate(population, fitness_function, _opts \\ []) do
     population
     |> Enum.map(fn chromosome ->
+      # Task.async(fn -> Chromosome.eval(chromosome, fitness_function) end)
       fitness = fitness_function.(chromosome)
       age = chromosome.age + 1
       %Chromosome{chromosome | fitness: fitness, age: age}
     end)
+    # |> Enum.sort_by(fn c -> Chromosome.get_fitness(c) end, &>=/2)
+
     |> Enum.sort_by(fitness_function, &>=/2)
   end
 
@@ -163,5 +175,11 @@ defmodule Genetic do
       |> Enum.reduce(%{}, fn {key, func}, acc -> Map.put(acc, key, func.(population)) end)
 
     Utilities.Statistics.insert(generation, stats_map)
+  end
+
+  def pmap(collection, module, function) do
+    collection
+    |> Enum.map(&Task.async(module, function, [&1]))
+    |> Enum.map(&Task.await(&1))
   end
 end

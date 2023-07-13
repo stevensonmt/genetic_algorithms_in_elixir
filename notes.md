@@ -457,6 +457,27 @@ Not sure it helps my understanding of genetic algorithms but the visualization i
 
 Errata: typo for `:gnuplot` in deps as `:gnuplut`
 
+# Chapter 11 Optimizing Your Algorithm
+
+Better link for the BEAM book would be https://blog.stenmans.org/theBeamBook/
+
+Benchmarking vs Profiling -- benchmark is assessing performance metrics, profiling assesses program behavior such as which functions or processes are using resources/time
+
+Modern hardware obviates pressing need for optimization in many cases due to available computing power exceeding needs
+
+Parallelization generally going to be effect optimization only for very large data sets and long running processing stages.
+
+pmap implementation crashes b/c Task.async/2 does not exist. Task.async/1 requires a zero-arity anonymous function but the example is a 1-arity function. Therefor must use Task.async/3 with module, function, args form.
+This also meant implementing a dummy module for the script to define the expensive and inexpensive dummy functions.
+
+Code for the Agent implementation in chromosome.ex is also wonky. The chromosome struct is not aliased so best to just use `__MODULE__` since it is being used where it is defined.
+Anonymous functions in the implementation also missing `end` keyword.
+
+Changes to genetic.ex break all the other scripts used previously.
+
+Optimization workflow:
+Necessary? -> Benchmark and Profile baseline -> Parallelism? -> Lowhanging fruit (Enum.drop(int) vs Enum.take(negative_int), Stream vs Enum?, Reduce vs Map? -> NIFs?
+
 ## Footnotes
 
 [^1]: This is the point my background gets in the way of the metaphor.
