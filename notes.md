@@ -478,6 +478,10 @@ Changes to genetic.ex break all the other scripts used previously.
 Optimization workflow:
 Necessary? -> Benchmark and Profile baseline -> Parallelism? -> Lowhanging fruit (Enum.drop(int) vs Enum.take(negative_int), Stream vs Enum?, Reduce vs Map? -> NIFs?
 
+# Chapter 12 Writing Tests and Code Quality
+
+# Chapter 13 Moving Forward
+
 ## Footnotes
 
 [^1]: This is the point my background gets in the way of the metaphor.

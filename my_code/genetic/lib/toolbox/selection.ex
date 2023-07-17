@@ -56,15 +56,19 @@ defmodule Toolbox.Selection do
     Stream.repeatedly(fn ->
       u = :rand.uniform() * sum_fitness
 
-      population
-      |> Enum.reduce_while(0, fn x, sum ->
-        if x.fitness + sum > u do
-          {:halt, x}
-        else
-          {:cont, x.fitness + sum}
-        end
-      end)
+      spin(population, u)
     end)
     |> Enum.take(n)
+  end
+
+  defp spin(chromosomes, u) do
+    chromosomes
+    |> Enum.reduce_while(0, fn x, sum ->
+      if x.fitness + sum > u do
+        {:halt, x}
+      else
+        {:cont, x.fitness + sum}
+      end
+    end)
   end
 end

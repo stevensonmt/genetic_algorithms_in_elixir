@@ -1,5 +1,9 @@
 defmodule Toolbox.Crossover do
+  @moduledoc false
   alias Types.Chromosome
+
+  @spec single_point(Chromosome.t(), Chromosome.t()) :: {Chromosome.t(), Chromosome.t()}
+  def single_point(c1 = %Chromosome{genes: []}, c2 = %Chromosome{genes: []}), do: {c1, c2}
 
   def single_point(p1, p2) do
     cx_point =
@@ -18,6 +22,7 @@ defmodule Toolbox.Crossover do
   def single_point([]), do: raise("You must have at least one parent!")
   def single_point([p1 | []]), do: p1
 
+  @spec single_point([Chromosome.t()]) :: [{Chromosome.t(), Chromosome.t()}]
   def single_point(parents) do
     parents
     |> Enum.chunk_every(2, 1, [hd(parents)])
@@ -29,6 +34,7 @@ defmodule Toolbox.Crossover do
     end)
   end
 
+  @spec uniform(Chromosome.t(), Chromosome.t(), float) :: {Chromosome.t(), Chromosome.t()}
   def uniform(p1, p2, rate) do
     {c1, c2} =
       p1.genes
@@ -45,6 +51,7 @@ defmodule Toolbox.Crossover do
     {%Chromosome{genes: c1, size: length(c1)}, %Chromosome{genes: c2, size: length(c2)}}
   end
 
+  @spec order_one_crossover(Chromosome.t(), Chromosome.t()) :: {Chromosome.t(), Chromosome.t()}
   def order_one_crossover(p1, p2) do
     lim = Enum.count(p1.genes) - 1
 
@@ -72,6 +79,8 @@ defmodule Toolbox.Crossover do
     {%Chromosome{genes: c1, size: p1.size}, %Chromosome{genes: c2, size: p2.size}}
   end
 
+  @spec whole_arithmetic_crossover(Chromosome.t(), Chromosome.t(), float) ::
+          {Chromosome.t(), Chromosome.t()}
   def whole_arithmetic_crossover(p1, p2, alpha) do
     {c1, c2} =
       p1.genes

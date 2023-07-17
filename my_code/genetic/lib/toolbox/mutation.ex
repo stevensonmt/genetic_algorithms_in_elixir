@@ -17,7 +17,8 @@ defmodule Toolbox.Mutation do
     genes =
       chromosome.genes
       |> Enum.map(fn g ->
-        if :rand.uniform() < p do
+        # if :rand.uniform() < p do
+        if Genetic.xor96() < p do
           bxor(g, 1)
         else
           g
